@@ -11,6 +11,11 @@ const routes = [
     name: 'Map',
     component: () => import('@/views/Map2.vue'),
   },
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('@/views/Admin.vue'),
+  },
 ];
 
 const router = createRouter({

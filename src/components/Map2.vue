@@ -1,87 +1,79 @@
 <template>
   <div class="mapfeatureselect">
-    <v-fade-transition>
+    <Transition name="slide-down">
       <div
         class="pa-3"
         style="background: rgba(0, 0, 0, 0.5)"
         v-if="!selectedFeatureKey"
       >
-        <div class="text-center" style="width: 100%; margin: 0 auto">
-          <h2 class="text-white font-weight-bold">Add location of</h2>
+        <div style="width: 100%; padding: 20px 0">
+          <n-h2 style="color: white; font-weight: bold">Add location of</n-h2>
 
-          <div class="ma-3">
-            <v-btn
-              rounded="lg"
-              class="ma-3"
-              :active="false"
+          <n-space justify="center" inline align="center">
+            <n-button
+              strong
+              round
               @click="selectedFeatureKey = featureType.name"
               v-for="featureType in featureTypes"
               :key="featureType.name"
-              :color="
-                selectedFeatureKey == featureType.name
-                  ? `${featureType.color}`
-                  : ''
-              "
-              ><v-icon class="mr-1" :color="featureType.color">{{
-                featureType.icon
-              }}</v-icon
-              ><span strong>{{ featureType.name }}</span></v-btn
+              :color="featureType.color"
+              ><n-icon
+                size="24"
+                color="#ffffff"
+                :component="featureType.icon"
+              ></n-icon
+              ><span strong style="padding-left: 5px">{{
+                featureType.name
+              }}</span></n-button
             >
-          </div>
+          </n-space>
         </div>
       </div>
-    </v-fade-transition>
+    </Transition>
   </div>
   <div class="mapcontrolbar">
-    <v-slide-y-transition leave-absolute>
+    <Transition name="slide-down">
       <div v-if="selectedFeatureKey">
-        <v-alert
-          key="selected"
-          rounded="0"
-          :border-color="`${selectedFeature.color}-lighten-4`"
-          :color="selectedFeature.color"
-          border="bottom"
-          ><div class="d-flex justify-space-between align-center"
-            ><div class="align-center">
-              <v-btn
+        <div :style="`background: ${selectedFeature.color}; color: white;`"
+          ><n-space justify="space-between" align="center"
+            ><div>
+              <n-button
+                style="margin: 5px"
+                :color="selectedFeature.color"
+                circle
                 @click="resetNewMarker"
                 icon
-                size="x-small"
-                class="d-inline-block"
-                ><v-icon :color="`${selectedFeature.color}`"
-                  >mdi-chevron-left</v-icon
-                ></v-btn
-              ><h2 class="ml-2 text-white d-inline-block"
-                >Add {{ selectedFeature.name }}</h2
-              ></div
-            >
-            <v-btn
-              @click="addMarker"
-              v-if="newMarker.lngLat"
-              icon
-              size="small"
-              class="text-success"
-              ><v-icon>mdi-check</v-icon></v-btn
-            ></div
-          ></v-alert
+                ><n-icon size="20" color="white"><ChevronBack /></n-icon
+              ></n-button>
+              <n-h2
+                align-text
+                color="white"
+                style="
+                  display: inline-block;
+                  font-weight: bold;
+                  color: white;
+                  padding: 0;
+                  margin: 5px;
+                  line-height: 100%;
+                "
+                >Add {{ selectedFeature.name }}</n-h2
+              >
+            </div>
+          </n-space></div
         >
-        <v-card>hello</v-card>
-        <v-autocomplete></v-autocomplete>
-        <div class="white-bg"> </div>
-        <v-autocomplete
-          :items="searchResults"
-          item-text="place_name"
-          v-model="searchQuery"
-          @keyup="searchFor"
-          label="Search"
-          prepend-inner-icon="mdi-magnify"
-          hide-details="auto"
-        ></v-autocomplete>
-        <v-text-field></v-text-field>
-        <v-select></v-select>
-        <v-autocomplete></v-autocomplete>
+        <n-auto-complete
+          size="large"
+          style="text-align: left"
+          :clear-after-select="true"
+          placeholder="Search or tap anywhere on the map"
+          @update:value="searchFor"
+          :on-select="goTo"
+          v-model:value="searchQuery"
+          :options="searchResults"
+          :render-label="renderLabel"
+        ></n-auto-complete>
       </div>
-    </v-slide-y-transition>
+    </Transition>
   </div>
   <div class="map-view">
     <div class="map-container">
@@ -103,55 +95,62 @@
           :key="marker.id"
         >
           <template v-slot:icon>
-            <v-icon
-              style="
-                transform: scale(2);
-                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
-              "
+            <n-icon
+              size="30"
+              style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4)"
               :color="getFeature(marker.type).color"
-              >{{ getFeature(marker.type).icon }}</v-icon
-            ></template
-          >
+              :component="getFeature(marker.type).icon"
+            ></n-icon
+          ></template>
         </mapbox-marker>
 
-        <v-fade-transition>
-          <mapbox-marker
-            v-if="newMarker.show"
-            :color="selectedFeature.color"
-            :lngLat="newMarker.lngLat"
-          >
-            <template v-slot:icon>
-              <v-icon
-                style="
-                  transform: scale(2);
-                  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
-                "
+        <mapbox-marker
+          v-if="newMarker.show"
+          :color="selectedFeature.color"
+          :lngLat="newMarker.lngLat"
+        >
+          <template v-slot:icon>
+            <div
+              class="selected-border"
+              :style="`border: 2px dotted ${selectedFeature.color};`"
+            >
+              <n-icon
+                size="30"
+                style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4)"
                 :color="selectedFeature.color"
-                >{{ selectedFeature.icon }}</v-icon
-              >
-            </template></mapbox-marker
-          >
-        </v-fade-transition>
+                :component="selectedFeature.icon"
+              ></n-icon> </div></template
+        ></mapbox-marker>
 
         <mapbox-marker @click="clickMarker" :lngLat="WYCLIFFE">
           <template v-slot:icon>
-            <v-icon style="transform: scale(1.3)" color="purple"
-              >mdi-church</v-icon
-            >
+            <n-icon-wrapper color="purple" :size="40" :border-radius="15">
+              <n-icon :component="Church" color="white" size="30"></n-icon>
+            </n-icon-wrapper>
           </template>
         </mapbox-marker>
       </mapbox-map>
 
-      <v-slide-y-reverse-transition>
-        <div
-          v-if="!centered"
-          style="position: fixed; z-index: 1; width: 100%; bottom: 10px"
+      <Transition name="slide-up">
+        <div class="bottom-button" v-if="newMarker.lngLat" key="addmarker">
+          <n-button @click="addMarker" type="success" round class="text-success"
+            ><n-icon size="15" style="padding-right: 10px"><Check /></n-icon>
+            Add</n-button
+          ></div
         >
-          <v-btn @click="resetMap" size="small" color="purple"
-            >Back to church</v-btn
+
+        <div v-else-if="!centered" class="bottom-button" key="resetmap">
+          <n-button round @click="resetMap" size="small" color="purple">
+            <n-icon
+              size="15"
+              style="padding-right: 10px"
+              :component="Church"
+              color="white"
+            ></n-icon>
+            Back to church</n-button
           >
         </div>
-      </v-slide-y-reverse-transition>
+      </Transition>
 
       <!-- <v-card dark class="ma-3 pa-4" v-if="newMarker.show">
         <v-form>
@@ -166,11 +165,30 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue';
+import {
+  NH2,
+  NButton,
+  NSpace,
+  NIcon,
+  NIconWrapper,
+  NAutoComplete,
+} from 'naive-ui';
+import { Home, Business, School, People, ChevronBack } from '@vicons/ionicons5';
+import { VolunteerActivismRound } from '@vicons/material';
+import { Church, Check } from '@vicons/fa';
+import { Sport16Filled } from '@vicons/fluent';
+
+import { ref, computed, onUnmounted, h } from 'vue';
 
 import { find, debounce } from 'lodash';
 
-import { collection, addDoc, onSnapshot, query } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+} from 'firebase/firestore';
 
 import db from '@/firebase';
 
@@ -209,17 +227,48 @@ onUnmounted(() => {
   unsub();
 });
 
+function renderLabel(option) {
+  console.log(option);
+  return [
+    h('div', { style: 'font-weight: bold' }, option.text),
+    h('div', { style: 'color: #ccc; width: 100%' }, option.place_name),
+  ];
+}
+
+function goTo(index) {
+  newMarker.value.lngLat = {
+    lng: searchResults.value[index].center[0],
+    lat: searchResults.value[index].center[1],
+  };
+  newMarker.value.show = true;
+  map.value.flyTo({
+    zoom: 13,
+    center: searchResults.value[index].center,
+    duration: 1000,
+  });
+}
+
 const searchResults = ref([]);
+
 const searchQuery = ref('');
 
-const searchFor = debounce(async () => {
-  console.log('searching');
-  searchResults.value = await searchBox.get(`${searchQuery.value}.json`, {
-    params: {
-      types: 'place,postcode,address',
-      access_token: ACCESS_TOKEN,
-    },
-  });
+const searchFor = debounce(async (event) => {
+  console.log('searching', event);
+  searchResults.value = await searchBox
+    .get(`${searchQuery.value}.json`, {
+      params: {
+        types: 'place,postcode,address,poi',
+        access_token: ACCESS_TOKEN,
+      },
+    })
+    .then((resp) =>
+      resp.data.features.map((feature, i) => {
+        return {
+          ...feature,
+          value: i,
+        };
+      })
+    );
   console.log(searchResults.value);
 }, 1000);
 
@@ -230,28 +279,33 @@ function getFeature(name) {
 const featureTypes = [
   {
     name: 'Home',
-    icon: 'mdi-home',
-    color: 'amber',
+    icon: Home,
+    color: '#F9A825',
   },
   {
     name: 'Work',
-    icon: 'mdi-office-building',
-    color: 'green',
+    icon: Business,
+    color: '#689F38',
   },
   {
     name: 'School',
-    icon: 'mdi-school',
-    color: 'green',
+    icon: School,
+    color: '#388E3C',
   },
   {
     name: 'Sport',
-    icon: 'mdi-soccer-field',
-    color: 'blue',
+    icon: Sport16Filled,
+    color: '#0277BD',
+  },
+  {
+    name: 'Volunteering',
+    icon: VolunteerActivismRound,
+    color: '#FF5722',
   },
   {
     name: 'Social',
-    icon: 'mdi-account-group',
-    color: 'pink',
+    icon: People,
+    color: '#FF4081',
   },
 ];
 
@@ -320,6 +374,7 @@ async function addMarker() {
   const docRef = await addDoc(collection(db, 'features'), {
     type: selectedFeature.value.name,
     lngLat: [newMarker.value.lngLat.lng, newMarker.value.lngLat.lat],
+    created: serverTimestamp(),
   });
 
   resetNewMarker();
@@ -363,7 +418,7 @@ function onLoad(event) {
 
 .mapfeatureselect {
   position: absolute;
-  margin-top: 20vh;
+  margin-bottom: 20vh;
   width: 100%;
   display: block;
   z-index: 1;
@@ -381,5 +436,68 @@ function onLoad(event) {
   z-index: 0;
   height: 100%;
   width: 100%;
+}
+
+.slide-up-enter-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+.slide-down-enter-active {
+  transition: all 0.3s ease;
+}
+
+.slide-down-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  transform: translateY(-20px);
+  opacity: 0;
+}
+
+.bottom-button {
+  position: fixed;
+  z-index: 1;
+  width: 100%;
+  bottom: 10px;
+}
+
+.selected-border {
+  height: 35px;
+  width: 35px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 100%;
+  animation: expand infinite 0.5s linear;
+}
+
+@keyframes expand {
+  from {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  to {
+    opacity: 0.6;
+    transform: scale(1);
+  }
 }
 </style>

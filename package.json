@@ -23,13 +23,17 @@
     "vue-mapbox-ts": "^0.7.0",
     "vue-router": "4",
     "vue3-openlayers": "^0.1.63",
-    "vuetify": "^3.0.0-alpha.0",
     "vuex": "^4.0.2",
     "webfontloader": "^1.0.0"
   },
   "devDependencies": {
+    "@vicons/fa": "^0.12.0",
+    "@vicons/fluent": "^0.12.0",
+    "@vicons/ionicons5": "^0.12.0",
+    "@vicons/material": "^0.12.0",
     "@vitejs/plugin-vue": "^2.2.0",
     "@vuetify/vite-plugin": "^1.0.0-alpha.0",
+    "naive-ui": "^2.26.0",
     "sass": "^1.38.0",
     "sass-loader": "^10.0.0",
     "vite": "^2.8.0",
