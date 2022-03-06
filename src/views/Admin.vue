@@ -1,17 +1,31 @@
 <template>
   <h1> Admin </h1>
   <div v-if="user">
-    <strong>
-      <div v-if="user.isAnonymous"> ANONYMOUS USER </div
-      ><div v-else>{{ user.email }}</div></strong
-    >
-    <div> ({{ user.uid }})</div
-    ><n-space justify="center">
-      <n-button @click="logOut">Sign out</n-button>
+    <div v-if="user.isAnonymous">
+      <strong> <div> ANONYMOUS USER </div></strong>
+      <n-space justify="center">
+        <n-button @click="logOut">Sign out</n-button>
+      </n-space>
+    </div>
+    <div v-else>
+      <strong>
+        ADMIN
+        <div>{{ user.email }}</div>
+      </strong>
+      <div> ({{ user.uid }})</div>
+      <n-space justify="center">
+        <n-button @click="logOut">Sign out</n-button>
 
-      <n-button v-if="!user.isAnonymous">Clear data</n-button>
-    </n-space>
+        <n-button @click="deleteMarkers"
+          >Clear data ({{ markers.length }})</n-button
+        >
+        <n-button @click="toggleTestMode"
+          >Test Mode is {{ config?.testMode ? 'ON' : 'OFF' }}</n-button
+        >
+      </n-space>
+    </div>
   </div>
+
   <div v-else style="padding: 20px">
     <n-space vertical>
       Not logged in <br />
@@ -29,10 +43,9 @@
 
 <script setup>
 import { useStore } from 'vuex';
-import { useActions } from 'vuex-composition-helpers';
+import { useActions, useState } from 'vuex-composition-helpers';
 import { NButton, NSpace, NInput } from 'naive-ui';
-import { computed, ref } from 'vue';
-import { auth } from '@/firebase';
+import { computed, onMounted, ref } from 'vue';
 
 const store = useStore();
 
@@ -41,7 +54,31 @@ const password = ref('');
 
 const user = computed(() => store.state.user);
 
-const { loginAnon, loginEmail, logOut } = useActions([
+function toggleTestMode() {
+  if (config.value.testMode) {
+    updateConfig({ testMode: false });
+  } else {
+    updateConfig({ testMode: true });
+  }
+}
+
+const { markers, config } = useState(['markers', 'config']);
+
+onMounted(() => {
+  subscribeAllMarkers();
+});
+
+const {
+  updateConfig,
+  deleteMarkers,
+  subscribeAllMarkers,
+  loginAnon,
+  loginEmail,
+  logOut,
+} = useActions([
+  'updateConfig',
+  'deleteMarkers',
+  'subscribeAllMarkers',
   'loginAnon',
   'loginEmail',
   'logOut',

@@ -10,9 +10,13 @@ const store = useStore();
 
 const user = computed(() => store.state.user);
 
-const { unsubscribe } = useActions(['unsubscribe']);
+const { unsubscribe, subscribeConfig } = useActions([
+  'unsubscribe',
+  'subscribeConfig',
+]);
 
 onMounted(() => {
+  subscribeConfig();
   if (!user.value) {
     store.dispatch('loginAnon');
   }

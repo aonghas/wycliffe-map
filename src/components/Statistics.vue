@@ -8,7 +8,7 @@
         :style="`background: ${feature.color}`"
       >
         <div class="widget-count">{{
-          markersByType[feature.name]?.length
+          markersByType[feature.name]?.length || 0
         }}</div>
         <div class="widget-title" :style="`background: ${feature.color}`">
           {{ feature.plural }}</div

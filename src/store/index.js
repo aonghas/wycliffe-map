@@ -9,22 +9,29 @@ import {
 import {
   collection,
   addDoc,
+  updateDoc,
+  doc,
+  deleteDoc,
   onSnapshot,
   query,
   serverTimestamp,
   where,
 } from 'firebase/firestore';
 
-let unsub;
+let unsub, unsubConfig;
 
 export default createStore({
   state: {
     markers: [],
     user: null,
+    config: false,
   },
   mutations: {
     addMarker(state, payload) {
       state.markers.push(payload);
+    },
+    removeMarker(state, payload) {
+      state.markers = state.markers.filter((m) => m.id != payload);
     },
     cleanStore(state) {
       state.markers = [];
@@ -34,6 +41,16 @@ export default createStore({
     },
   },
   actions: {
+    updateConfig(_, payload) {
+      console.log('here');
+      const configRef = doc(db, 'settings', 'config');
+      updateDoc(configRef, payload);
+    },
+    deleteMarkers({ state, commit }) {
+      state.markers.forEach(async (marker) => {
+        await deleteDoc(doc(db, 'features', marker.id));
+      });
+    },
     logOut({ commit }) {
       signOut(auth).then(() => {
         commit('SET_STATE', { name: 'user', data: null });
@@ -72,6 +89,11 @@ export default createStore({
         created: serverTimestamp(),
       });
     },
+    subscribeConfig({ commit }) {
+      unsubConfig = onSnapshot(doc(db, 'settings', 'config'), (doc) => {
+        commit('SET_STATE', { name: 'config', data: doc.data() });
+      });
+    },
     subscribeMyMarkers({ commit, state }) {
       const q = query(
         collection(db, 'features'),
@@ -90,6 +112,8 @@ export default createStore({
               break;
             case 'removed':
               console.log('removed', change.doc.data(), change.doc.id);
+
+              commit('removeMarker', change.doc.id);
               break;
             default:
               break;
@@ -112,6 +136,7 @@ export default createStore({
               break;
             case 'removed':
               console.log('removed', change.doc.data(), change.doc.id);
+              commit('removeMarker', change.doc.id);
               break;
             default:
               break;
@@ -121,6 +146,7 @@ export default createStore({
     },
     unsubscribe() {
       if (unsub) unsub();
+      if (unsubConfig) unsubConfig();
     },
     deleteMarker({ commit }, marker) {
       db.collection('markers').doc(marker.id).delete();
