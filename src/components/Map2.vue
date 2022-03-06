@@ -1,16 +1,13 @@
 <template>
-  <div class="mapfeatureselect">
-    <Transition name="slide-down">
-      <div
-        class="pa-3"
-        style="background: rgba(0, 0, 0, 0.5)"
-        v-if="!selectedFeatureKey"
-      >
+  <Transition name="slide-down">
+    <div class="mapfeatureselect" v-if="!selectedFeatureKey">
+      <div class="pa-3" style="background: rgba(0, 0, 0, 0.5)">
         <div style="width: 100%; padding: 20px 0">
-          <n-h2 style="color: white; font-weight: bold">Add location of</n-h2>
+          <!-- <n-h2 style="color: white; font-weight: bold">Add location of</n-h2> -->
 
           <n-space justify="center" inline align="center">
             <n-button
+              style="padding: 0 9px"
               strong
               round
               @click="selectedFeatureKey = featureType.name"
@@ -29,11 +26,9 @@
           </n-space>
         </div>
       </div>
-    </Transition>
-  </div>
-  <div class="mapcontrolbar">
-    <Transition name="slide-down">
-      <div v-if="selectedFeatureKey">
+    </div>
+    <div class="mapcontrolbar" v-else>
+      <div>
         <div :style="`background: ${selectedFeature.color}; color: white;`"
           ><n-space justify="space-between" align="center"
             ><div>
@@ -63,18 +58,20 @@
         >
         <n-auto-complete
           size="large"
-          style="text-align: left"
+          style="text-align: left; z-index: 10"
           :clear-after-select="true"
-          placeholder="Search or tap anywhere on the map"
+          :blur-after-select="true"
+          placeholder="Search here or tap anywhere on the map"
           @update:value="searchFor"
+          @focus="searchFor"
           :on-select="goTo"
           v-model:value="searchQuery"
           :options="searchResults"
           :render-label="renderLabel"
         ></n-auto-complete>
       </div>
-    </Transition>
-  </div>
+    </div>
+  </Transition>
   <div class="map-view">
     <div class="map-container">
       <mapbox-map
@@ -95,12 +92,12 @@
           :key="marker.id"
         >
           <template v-slot:icon>
-            <n-icon
-              size="30"
-              style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4)"
-              :color="getFeature(marker.type).color"
-              :component="getFeature(marker.type).icon"
-            ></n-icon
+            <div class="icon-border">
+              <n-icon
+                size="30"
+                :color="featureTypes[marker.type]?.color"
+                :component="featureTypes[marker.type]?.icon"
+              ></n-icon> </div
           ></template>
         </mapbox-marker>
 
@@ -111,7 +108,7 @@
         >
           <template v-slot:icon>
             <div
-              class="selected-border"
+              class="icon-border selected"
               :style="`border: 2px dotted ${selectedFeature.color};`"
             >
               <n-icon
@@ -122,7 +119,7 @@
               ></n-icon> </div></template
         ></mapbox-marker>
 
-        <mapbox-marker @click="clickMarker" :lngLat="WYCLIFFE">
+        <mapbox-marker @click="clickMarker" :lngLat="WYCLIFFE" v-if="init">
           <template v-slot:icon>
             <n-icon-wrapper color="purple" :size="40" :border-radius="15">
               <n-icon :component="Church" color="white" size="30"></n-icon>
@@ -130,29 +127,9 @@
           </template>
         </mapbox-marker>
       </mapbox-map>
+    </div>
 
-      <Transition name="slide-up">
-        <div class="bottom-button" v-if="newMarker.lngLat" key="addmarker">
-          <n-button @click="addMarker" type="success" round class="text-success"
-            ><n-icon size="15" style="padding-right: 10px"><Check /></n-icon>
-            Add</n-button
-          ></div
-        >
-
-        <div v-else-if="!centered" class="bottom-button" key="resetmap">
-          <n-button round @click="resetMap" size="small" color="purple">
-            <n-icon
-              size="15"
-              style="padding-right: 10px"
-              :component="Church"
-              color="white"
-            ></n-icon>
-            Back to church</n-button
-          >
-        </div>
-      </Transition>
-
-      <!-- <v-card dark class="ma-3 pa-4" v-if="newMarker.show">
+    <!-- <v-card dark class="ma-3 pa-4" v-if="newMarker.show">
         <v-form>
           <v-text-field
             autofocus
@@ -160,8 +137,40 @@
             v-model="newMarker.description"
           ></v-text-field></v-form
       ></v-card> -->
-    </div>
   </div>
+  <Transition name="slide-down">
+    <div class="top-button" v-if="newMarker.show" key="addmarker">
+      <n-space justify="center">
+        <n-button
+          @click="newMarker.show = false"
+          type="error"
+          round
+          class="text-success"
+          style="padding-left: 5px"
+          ><n-icon size="25" style="padding-right: 5px"><Close /></n-icon>
+          Cancel</n-button
+        >
+        <n-button @click="addMarker" type="success" round class="text-success"
+          ><n-icon size="15" style="padding-right: 10px"><Check /></n-icon>
+          Add</n-button
+        >
+      </n-space></div
+    >
+  </Transition>
+
+  <Transition name="slide-up">
+    <div v-if="!centered" class="bottom-button" key="resetmap">
+      <n-button round @click="resetMap" color="purple">
+        <n-icon
+          size="15"
+          style="padding-right: 10px"
+          :component="Church"
+          color="white"
+        ></n-icon>
+        Back to church</n-button
+      >
+    </div>
+  </Transition>
 </template>
 
 <script setup>
@@ -173,26 +182,26 @@ import {
   NIconWrapper,
   NAutoComplete,
 } from 'naive-ui';
-import { Home, Business, School, People, ChevronBack } from '@vicons/ionicons5';
-import { VolunteerActivismRound } from '@vicons/material';
+import { ChevronBack, Close } from '@vicons/ionicons5';
+
 import { Church, Check } from '@vicons/fa';
-import { Sport16Filled } from '@vicons/fluent';
 
-import { ref, computed, onUnmounted, h } from 'vue';
+import { featureTypes } from '@/utils';
 
-import { find, debounce } from 'lodash';
+import { ref, computed, h } from 'vue';
 
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  query,
-  serverTimestamp,
-} from 'firebase/firestore';
-
-import db from '@/firebase';
+import { debounce } from 'lodash';
 
 import axios from 'axios';
+
+import { useState, useActions } from 'vuex-composition-helpers';
+
+const { user, markers } = useState(['user', 'markers']);
+
+const { addMarkerToFirestore, subscribeMyMarkers } = useActions([
+  'addMarkerToFirestore',
+  'subscribeMyMarkers',
+]);
 
 const searchBox = axios.create({
   baseURL: 'https://api.mapbox.com/geocoding/v5/mapbox.places/',
@@ -203,32 +212,7 @@ const mapStyle = 'mapbox://styles/aonghas/cl0bpn4r9002r14v20lfnw3g2';
 const ACCESS_TOKEN =
   'pk.eyJ1IjoiYW9uZ2hhcyIsImEiOiJjbDBicGNnZzQweHY2M2RxdXc3aWR2aGJ1In0.bEoO3hknIQLxRp1ujiN01Q';
 
-const q = query(collection(db, 'features'));
-
-const unsub = onSnapshot(q, (snapshot) => {
-  snapshot.docChanges().forEach((change) => {
-    switch (change.type) {
-      case 'added':
-        markers.value.push({ id: change.doc.id, ...change.doc.data() });
-        break;
-      case 'modified':
-        console.log('modified', change.doc.data(), change.doc.id);
-        break;
-      case 'removed':
-        console.log('removed', change.doc.data(), change.doc.id);
-        break;
-      default:
-        break;
-    }
-  });
-});
-
-onUnmounted(() => {
-  unsub();
-});
-
 function renderLabel(option) {
-  console.log(option);
   return [
     h('div', { style: 'font-weight: bold' }, option.text),
     h('div', { style: 'color: #ccc; width: 100%' }, option.place_name),
@@ -242,7 +226,7 @@ function goTo(index) {
   };
   newMarker.value.show = true;
   map.value.flyTo({
-    zoom: 13,
+    zoom: 16,
     center: searchResults.value[index].center,
     duration: 1000,
   });
@@ -257,6 +241,8 @@ const searchFor = debounce(async (event) => {
   searchResults.value = await searchBox
     .get(`${searchQuery.value}.json`, {
       params: {
+        limit: 10,
+        proximity: `${center.value[0]},${center.value[1]}`,
         types: 'place,postcode,address,poi',
         access_token: ACCESS_TOKEN,
       },
@@ -269,53 +255,15 @@ const searchFor = debounce(async (event) => {
         };
       })
     );
-  console.log(searchResults.value);
 }, 1000);
-
-function getFeature(name) {
-  return find(featureTypes, { name });
-}
-
-const featureTypes = [
-  {
-    name: 'Home',
-    icon: Home,
-    color: '#F9A825',
-  },
-  {
-    name: 'Work',
-    icon: Business,
-    color: '#689F38',
-  },
-  {
-    name: 'School',
-    icon: School,
-    color: '#388E3C',
-  },
-  {
-    name: 'Sport',
-    icon: Sport16Filled,
-    color: '#0277BD',
-  },
-  {
-    name: 'Volunteering',
-    icon: VolunteerActivismRound,
-    color: '#FF5722',
-  },
-  {
-    name: 'Social',
-    icon: People,
-    color: '#FF4081',
-  },
-];
 
 const selectedFeatureKey = ref(null);
 
 const centered = computed(() => {
   if (center.value) {
     return (
-      Math.abs(WYCLIFFE[0] - center.value[0]) < 0.03 &&
-      Math.abs(WYCLIFFE[1] - center.value[1]) < 0.03
+      Math.abs(WYCLIFFE[0] - center.value[0]) < 0.01 &&
+      Math.abs(WYCLIFFE[1] - center.value[1]) < 0.01
     );
   } else {
     return true;
@@ -324,7 +272,7 @@ const centered = computed(() => {
 
 const selectedFeature = computed(() => {
   if (selectedFeatureKey.value != null) {
-    return find(featureTypes, { name: selectedFeatureKey.value });
+    return featureTypes[selectedFeatureKey.value];
   } else {
     return null;
   }
@@ -333,6 +281,7 @@ const newMarker = ref({
   show: false,
   lngLat: null,
   type: null,
+  point: null,
 });
 
 function resetNewMarker() {
@@ -345,8 +294,6 @@ const center = ref();
 const zoom = ref();
 const init = ref(false);
 const map = ref();
-
-const markers = ref([]);
 
 function resetMap() {
   map.value.flyTo({
@@ -361,7 +308,6 @@ function clickMarker(marker) {
 }
 
 function updateCenter(event) {
-  console.log(event, WYCLIFFE);
   center.value = event;
 }
 function updateZoom(event) {
@@ -369,12 +315,10 @@ function updateZoom(event) {
 }
 
 async function addMarker() {
-  console.log(newMarker.value, selectedFeature.value);
-
-  const docRef = await addDoc(collection(db, 'features'), {
+  const docRef = await addMarkerToFirestore({
     type: selectedFeature.value.name,
     lngLat: [newMarker.value.lngLat.lng, newMarker.value.lngLat.lat],
-    created: serverTimestamp(),
+    author: user.value.uid,
   });
 
   resetNewMarker();
@@ -383,11 +327,17 @@ async function addMarker() {
 }
 
 function onLoad(event) {
-  init.value = true;
+  subscribeMyMarkers();
+  setTimeout(() => {
+    init.value = true;
+  }, 300);
+
   map.value = event;
-  center.value = [map.value.getCenter().lng, map.value.getCenter().lat];
+  // center.value = [map.value.getCenter().lng, map.value.getCenter().lat];
+  map.value.setCenter(WYCLIFFE);
   map.value.setZoom(20);
-  map.value.flyTo({ zoom: 13, duration: 4000 });
+  map.value.setPitch(85);
+  map.value.flyTo({ zoom: 13, duration: 5000, pitch: 0 });
 
   map.value.dragRotate.disable();
 
@@ -396,8 +346,15 @@ function onLoad(event) {
 
   map.value.on('click', (event) => {
     if (selectedFeatureKey.value) {
+      newMarker.value.point = event.point;
       newMarker.value.show = true;
       newMarker.value.lngLat = event.lngLat;
+
+      map.value.flyTo({
+        center: newMarker.value.lngLat,
+        zoom: 15,
+        duration: 500,
+      });
     }
   });
 }
@@ -466,14 +423,27 @@ function onLoad(event) {
   opacity: 0;
 }
 
+.top-button {
+  position: fixed;
+  z-index: 1;
+  width: 100%;
+  top: 100px;
+  button {
+    box-shadow: 1px 3px 5px rgba(0, 0, 0, 0.3);
+  }
+}
+
 .bottom-button {
   position: fixed;
   z-index: 1;
   width: 100%;
   bottom: 10px;
+  button {
+    box-shadow: 1px 3px 5px rgba(0, 0, 0, 0.3);
+  }
 }
 
-.selected-border {
+.icon-border {
   height: 35px;
   width: 35px;
   padding: 10px;
@@ -481,7 +451,10 @@ function onLoad(event) {
   align-items: center;
   justify-content: center;
   border-radius: 100%;
-  animation: expand infinite 0.5s linear;
+
+  &.selected {
+    animation: expand infinite 0.5s linear;
+  }
 }
 
 @keyframes expand {
